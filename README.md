@@ -1,6 +1,7 @@
 # Scoop
 
 Scoop is a simple podcast downloader that follows rss feeds, retrieving new episodes as they become available.
+It works by downloading RSS files, finding new episodes and adding download orders. New download orders then need to be downloaded.
 
 ## Dependencies
 
@@ -79,4 +80,16 @@ To download waiting episodes:
 $ scoop dl get
 ```
 
+Now that the podcasts' RSS feeds have been added, grabbing new episodes is only a matter of syncing the RSS feeds and then downloading the new work orders.
+
+eg, To sync all tracked podcasts and generate download orders for each new episode:
+
+```
+$ scoop podcast sync
+```
+
+Then download new episodes:
+```
+$ scoop dl get
+```
 
