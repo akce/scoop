@@ -62,18 +62,15 @@ def addpodcast(poddict, dbfile):
         poddict['podcastid'] = None
         cursor = conn.execute(addpodsql, poddict)
         if cursor.rowcount == 0:
-            podcast = getpodcast(field='title', value=poddict['title'], conn=conn)
+            podcast = getpodcastbyrssurl(poddict['rssurl'], conn=conn)
         else:
             poddict['podcastid'] = cursor.lastrowid
             conn.commit()
             podcast = Podcast(**poddict)
     return podcast
 
-def getpodcast(field, value, conn):
-    global podcols
-    assert field in podcols
-    query = 'SELECT * FROM podcast WHERE {} = ?'.format(field)
-    curs = conn.execute(query, (value,))
+def getpodcastbyrssurl(rssurl, conn):
+    curs = conn.execute('SELECT * FROM podcast WHERE rssurl = ?', (rssurl,))
     return Podcast(**curs.fetchone())
 
 def getpodcasts(dbfile, title=None):
