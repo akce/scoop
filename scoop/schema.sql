@@ -33,7 +33,7 @@ CREATE TABLE config (
 
 -- Global config options, and their defaults.
 INSERT INTO config ('key', 'value', 'description') VALUES ('downloaddir', '~/scoop', 'Base podcast download directory');
-INSERT INTO config ('key', 'value', 'description') VALUES ('saverss', '1', 'Set to 1 if the rss file should be saved to the config directory');
+INSERT INTO config ('key', 'value', 'description') VALUES ('saverss', '1', 'Set to 1 if the rss file should be saved to the download directory');
 INSERT INTO config ('key', 'value', 'description') VALUES ('schemaversion', '1', 'Scoop sqlite schema interface version number');
 INSERT INTO config ('key', 'value', 'description') VALUES ('useragent', 'Scoop/0.1', 'HTTP User Agent');
 
