@@ -23,7 +23,17 @@ def dlnewepisodes(args):
     scoop.dlnewepisodes(dbfile=args.dbfile)
 
 def lsdl(args):
-    scoop.printdls(dbfile=args.dbfile, podcasttitle=args.podcasttitle, episodetitle=args.episodetitle)
+    # Convert args to status list.
+    if any([args.downloaded, args.errored, args.skipped, args.waiting]):
+        # Find the ones selected and put in our list.
+        statelist = list(filter(None, ['d' if args.downloaded else None,
+                                       'e' if args.errored else None,
+                                       's' if args.skipped else None,
+                                       'w' if args.waiting else None]))
+    else:
+        # Show all by default.
+        statelist = None
+    scoop.printdls(dbfile=args.dbfile, podcasttitle=args.podcasttitle, episodetitle=args.episodetitle, statelist=statelist)
 
 def printallconfig(args):
     scoop.printallconfig(dbfile=args.dbfile)
@@ -91,9 +101,12 @@ def main():
     with command('dl', aliases=['d', 'q'], help='download queue actions') as c:
         subcommand = nestedarg.NestedSubparser(c.add_subparsers())
         with subcommand('ls', aliases=['l'], help='list download orders') as c:
-            # TODO -all, --new, --waiting, --skipped, --error, --dled
             c.add_argument('--podcasttitle', default=None, type=str, help='podcast title search string')
             c.add_argument('--episodetitle', default=None, type=str, help='episode title search string')
+            c.add_argument('--downloaded', default=False, action='store_true', help='show downloaded orders')
+            c.add_argument('--errored', default=False, action='store_true', help='show errored orders')
+            c.add_argument('--skipped', default=False, action='store_true', help='show skipped orders')
+            c.add_argument('--waiting', default=False, action='store_true', help='show waiting orders')
             c.set_defaults(command=lsdl)
         with subcommand('sync', aliases=['s', 'get', 'g'], help='action waiting download orders') as c:
             c.set_defaults(command=syncdls)

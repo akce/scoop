@@ -103,8 +103,8 @@ def dlnewepisodes(dbfile):
         for d in dlorders:
             print('{:<5} {} {:16} {}'.format(d.episodeid, d.status, d.podtitle, d.eptitle))
 
-def printdls(dbfile, podcasttitle=None, episodetitle=None):
-    dls = sql.getdls(dbfile, podcasttitle=podcasttitle, episodetitle=episodetitle)
+def printdls(dbfile, podcasttitle=None, episodetitle=None, statelist=None):
+    dls = sql.getdls(dbfile, podcasttitle=podcasttitle, episodetitle=episodetitle, statelist=statelist)
     for d in dls:
         filename = '' if d.filename is None else d.filename
         print('{:<5} {} {:16} {:16} {}'.format(d.dlid, d.status, d.podtitle, filename, d.eptitle))
