@@ -35,7 +35,7 @@ def setconfig(args):
     scoop.setconfig(args.key, args.value, dbfile=args.dbfile)
 
 def syncpodcasts(args):
-    scoop.syncpodcasts(dbfile=args.dbfile)
+    scoop.syncpodcasts(dbfile=args.dbfile, title=args.podcasttitle, limit=args.limit)
 
 def syncdls(args):
     scoop.syncdls(dbfile=args.dbfile)
@@ -61,7 +61,7 @@ def main():
         subcommand = nestedarg.NestedSubparser(c.add_subparsers())
         with subcommand('add', aliases=['new', 'a', 'n'], help='add a new podcast') as c:
             c.add_argument('rssurl', help='url for the rss feed')
-            c.add_argument('--limit', default=False, type=int, help='how many of the latest articles to retrieve. Default: get all')
+            c.add_argument('--limit', default=False, type=int, help='number of newest episodes to get. Default: get all')
             c.set_defaults(command=addpodcast)
         with subcommand('ls', aliases=['l'], help='list podcasts') as c:
             c.add_argument('title', nargs='?', default=None, type=str, help='title search string')
@@ -72,6 +72,8 @@ def main():
             c.add_argument('--rssurl', type=str, help='set podcast rssurl')
             c.set_defaults(command=editpodcast)
         with subcommand('sync', aliases=['get', 'g', 's'], help='find new episodes for podcasts') as c:
+            c.add_argument('--podcasttitle', default=None, type=str, help='podcast title search string')
+            c.add_argument('--limit', default=False, type=int, help='number of newest episodes to get. Default: get all')
             c.set_defaults(command=syncpodcasts)
     with command('episode', aliases=['e'], help='episode actions') as c:
         subcommand = nestedarg.NestedSubparser(c.add_subparsers())

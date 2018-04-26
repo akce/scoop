@@ -56,10 +56,10 @@ def editpodcast(dbfile, podtitle, title=None, rssurl=None):
     else:
         print('Nothing to do! Supply either a new title or rssurl.')
 
-def syncpodcasts(dbfile):
-    podcasts = sql.getpodcasts(dbfile)
+def syncpodcasts(dbfile, title=None, limit=False):
+    podcasts = sql.getpodcasts(dbfile, title)
     for p in podcasts:
-        addpodcasturl(p.rssurl, dbfile)
+        addpodcasturl(p.rssurl, dbfile, limit=limit)
 
 def downloadepisode(dbfile, dl):
     # Download episode from dl.mediaurl > config:downloaddir/dl.podtitle/dl.mediaurl:filename
