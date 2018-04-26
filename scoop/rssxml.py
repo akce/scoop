@@ -30,8 +30,9 @@ def episodedicts(root):
         permalink = True if guidnode.attrib['isPermaLink'] == 'true' else False
         pubdatestr = x.find('pubDate').text
         pubdate = round(eu.parsedate_to_datetime(pubdatestr).timestamp())
-        description = x.find('description').text
-        title = x.find('title').text
+        # Remove trailing whitespace/newlines (rstrip) from title and description fields.
+        description = x.find('description').text.rstrip()
+        title = x.find('title').text.rstrip()
         link = x.find('link').text
         medianode = x.find('enclosure')
         try:
