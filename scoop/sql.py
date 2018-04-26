@@ -224,7 +224,11 @@ def adddownloads(episodes, dbfile, limit):
         for ep in episodes:
             added = int(time.time())
             actioned = None
-            if limit is False:
+            # Downloads only apply to media episodes so automatically skip non-media items, at least until
+            # we provide some kind of action (eg, send-email) for non-media types.
+            if ep.mediaurl is None:
+                state = 's'
+            elif limit is False:
                 # Always add a download order.
                 state = 'w'
             else:
@@ -236,7 +240,9 @@ def adddownloads(episodes, dbfile, limit):
                     state = 'w'
                 else:
                     state = 's'
-                    actioned = added
+            if state == 's':
+                # SKIPPED is an end state so we'll set actioned to the order creation time.
+                actioned = added
             # Insert a download workorder for the new episode.
             dl = {'dlid': None, 'episodeid': ep.episodeid, 'status': state, 'added': added, 'actioned': actioned, 'filename': None}
             cursor = conn.execute(adddlsql, dl)

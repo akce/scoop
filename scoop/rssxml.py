@@ -34,9 +34,16 @@ def episodedicts(root):
         title = x.find('title').text
         link = x.find('link').text
         medianode = x.find('enclosure')
-        mediaurl = medianode.attrib['url']
-        mediatype = medianode.attrib['type']
-        medialength = int(medianode.attrib['length'])
+        try:
+            mediaurl = medianode.attrib['url']
+        except AttributeError as e:
+            # Episode does not contain media.
+            mediaurl = None
+            mediatype = None
+            medialength = None
+        else:
+            mediatype = medianode.attrib['type']
+            medialength = int(medianode.attrib['length'])
         ep = dict(guid=guid, permalink=permalink, title=title, description=description, mediaurl=mediaurl, mediatype=mediatype, medialength=medialength, pubdate=pubdate, link=link)
         yield ep
 
