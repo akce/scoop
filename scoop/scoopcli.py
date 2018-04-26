@@ -4,6 +4,17 @@ import os
 from . import nestedarg
 from . import scoop
 
+def numberrangestolist(numberranges):
+    numlist = []
+    for x in numberranges.split(','):
+        try:
+            a, b = x.split('-')
+        except ValueError:
+            numlist.append(int(x))
+        else:
+            numlist.extend(list(range(int(a), int(b) + 1)))
+    return list(sorted(numlist))
+
 def init(args):
     scoop.init(dbfile=args.dbfile)
 
@@ -18,6 +29,14 @@ def editpodcast(args):
 
 def lsepisodes(args):
     scoop.printepisodes(dbfile=args.dbfile, podcasttitle=args.podcasttitle, episodetitle=args.episodetitle)
+
+def dloldepisodes(args):
+    # Explode idranges to a list of numbers.
+    if args.ids is None:
+        idlist = []
+    else:
+        idlist = numberrangestolist(args.ids)
+    scoop.dloldepisodes(dbfile=args.dbfile, idlist=idlist, podcasttitle=args.podcasttitle, episodetitle=args.episodetitle)
 
 def dlnewepisodes(args):
     scoop.dlnewepisodes(dbfile=args.dbfile)
@@ -92,12 +111,12 @@ def main():
             c.add_argument('--podcasttitle', default=None, type=str, help='podcast title search string')
             c.add_argument('episodetitle', nargs='?', default=None, type=str, help='episode title search string')
             c.set_defaults(command=lsepisodes)
-        with subcommand('get', aliases=['g', 'dl', 'd'], help='make download orders for new episodes') as c:
-            # TODO Create dl orders based on all kinds of criteria.
-            #c.add_argument('--podcasttitle', default=None, type=str, help='podcast title search string')
-            #c.add_argument('--episodetitle', default=None, type=str, help='episode title search string')
-            #c.add_argument('--limit', default=False, type=int, help='how many of the latest articles per podcast to retrieve. Default: get all')
-            c.set_defaults(command=dlnewepisodes)
+        with subcommand('get', aliases=['g', 'dl', 'd'], help='make download orders for old episodes') as c:
+            # Create dl orders based on all kinds of criteria.
+            c.add_argument('--podcasttitle', default=None, type=str, help='podcast title search string')
+            c.add_argument('--episodetitle', default=None, type=str, help='episode title search string')
+            c.add_argument('--ids', default=None, type=str, help='episode id number list. eg, 1,4-7,9,10')
+            c.set_defaults(command=dloldepisodes)
     with command('dl', aliases=['d', 'q'], help='download queue actions') as c:
         subcommand = nestedarg.NestedSubparser(c.add_subparsers())
         with subcommand('ls', aliases=['l'], help='list download orders') as c:

@@ -108,11 +108,14 @@ def editpodcast(dbfile, podcasttitle, title=None, rssurl=None):
         conn.execute(query, values)
         conn.commit()
 
-def getepisodes(dbfile, podcasttitle=None, episodetitle=None):
+def getepisodes(dbfile, idlist=None, podcasttitle=None, episodetitle=None):
     queryelems = ['SELECT p.title as podtitle, e.* FROM episode as e JOIN podcast as p on e.podcastid = p.podcastid']
     order = 'ORDER BY podtitle ASC, e.pubdate DESC'
     where = []
     value = []
+    if idlist:
+        where.append('e.episodeid IN ({})'.format(('?,' * len(idlist))[:-1]))
+        value.extend(idlist)
     if podcasttitle:
         where.append('p.title LIKE ?')
         value.append('%{}%'.format(podcasttitle))
@@ -154,7 +157,7 @@ def getnewepisodes(dbfile):
             episodes.append(Episode(**row))
     return episodes
 
-def getdls(dbfile, podcasttitle=None, episodetitle=None, statelist=None):
+def getdls(dbfile, podcasttitle=None, episodetitle=None, episodeids=None, statelist=None):
     queryelems = ['SELECT p.title as podtitle, e.title as eptitle, e.mediaurl, d.* FROM episode as e JOIN podcast as p USING(podcastid) JOIN dl as d USING(episodeid)']
     order = 'ORDER BY podtitle ASC, e.pubdate DESC'
     where = []
@@ -165,6 +168,9 @@ def getdls(dbfile, podcasttitle=None, episodetitle=None, statelist=None):
     if episodetitle:
         where.append('e.title LIKE ?')
         value.append('%{}%'.format(episodetitle))
+    if episodeids:
+        where.append('e.episodeid IN ({})'.format(('?,' * len(episodeids))[:-1]))
+        value.extend(episodeids)
     if statelist:
         where.append('d.status IN (?)')
         value.append(','.join(statelist))

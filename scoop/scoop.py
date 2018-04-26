@@ -95,13 +95,24 @@ def printepisodes(dbfile, podcasttitle=None, episodetitle=None):
     for e in episodes:
         print('{:<5} {:32} {} {}'.format(e.episodeid, e.podtitle, datetime.date.fromtimestamp(e.pubdate), e.title))
 
-def dlnewepisodes(dbfile):
-    """ Adds download orders for new episodes. """
-    newepisodes = sql.getnewepisodes(dbfile)
-    if newepisodes:
-        dlorders = sql.adddownloads(newepisodes, dbfile, limit=False)
+def insertdls(dbfile, episodes):
+    """ Insert new dl orders for each episode in episodes. """
+    if episodes:
+        dlorders = sql.adddownloads(episodes, dbfile, limit=False)
         for d in dlorders:
             print('{:<5} {} {:16} {}'.format(d.episodeid, d.status, d.podtitle, d.eptitle))
+
+def dlnewepisodes(dbfile):
+    """ Adds download orders for new episodes. """
+    insertdls(dbfile, sql.getnewepisodes(dbfile))
+
+def dloldepisodes(dbfile, idlist=None, podcasttitle=None, episodetitle=None):
+    """ Create dl orders for old/existing episodes. """
+    episodes = sql.getepisodes(dbfile, idlist=idlist, podcasttitle=podcasttitle, episodetitle=episodetitle)
+    # Remove episodes that already have outstanding 'w' dl orders.
+    eids = [e.episodeid for e in episodes]
+    waitingdlids = frozenset(d.episodeid for d in sql.getdls(dbfile, episodeids=eids, statelist=['w']))
+    insertdls(dbfile, [e for e in episodes if e.episodeid not in waitingdlids])
 
 def printdls(dbfile, podcasttitle=None, episodetitle=None, statelist=None):
     dls = sql.getdls(dbfile, podcasttitle=podcasttitle, episodetitle=episodetitle, statelist=statelist)
