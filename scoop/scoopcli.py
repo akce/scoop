@@ -19,8 +19,8 @@ def editpodcast(args):
 def lsepisodes(args):
     scoop.printepisodes(dbfile=args.dbfile, podcasttitle=args.podcasttitle, episodetitle=args.episodetitle)
 
-def dlepisodes(args):
-    scoop.dlepisodes(dbfile=args.dbfile)
+def dlnewepisodes(args):
+    scoop.dlnewepisodes(dbfile=args.dbfile)
 
 def lsdl(args):
     scoop.printdls(dbfile=args.dbfile, podcasttitle=args.podcasttitle, episodetitle=args.episodetitle)
@@ -85,7 +85,7 @@ def main():
             #c.add_argument('--podcasttitle', default=None, type=str, help='podcast title search string')
             #c.add_argument('--episodetitle', default=None, type=str, help='episode title search string')
             #c.add_argument('--limit', default=False, type=int, help='how many of the latest articles per podcast to retrieve. Default: get all')
-            c.set_defaults(command=dlepisodes)
+            c.set_defaults(command=dlnewepisodes)
     with command('dl', aliases=['d', 'q'], help='download queue actions') as c:
         subcommand = nestedarg.NestedSubparser(c.add_subparsers())
         with subcommand('ls', aliases=['l'], help='list download orders') as c:

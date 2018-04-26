@@ -95,11 +95,13 @@ def printepisodes(dbfile, podcasttitle=None, episodetitle=None):
     for e in episodes:
         print('{:<5} {:32} {} {}'.format(e.episodeid, e.podtitle, datetime.date.fromtimestamp(e.pubdate), e.title))
 
-def dlepisodes(dbfile):
+def dlnewepisodes(dbfile):
     """ Adds download orders for new episodes. """
-    dlorders = sql.dlepisodes(dbfile)
-    for d in dlorders:
-        print('{:<5} {} {:16} {}'.format(d.episodeid, d.status, d.podtitle, d.eptitle))
+    newepisodes = sql.getnewepisodes(dbfile)
+    if newepisodes:
+        dlorders = sql.adddownloads(newepisodes, dbfile, limit=False)
+        for d in dlorders:
+            print('{:<5} {} {:16} {}'.format(d.episodeid, d.status, d.podtitle, d.eptitle))
 
 def printdls(dbfile, podcasttitle=None, episodetitle=None):
     dls = sql.getdls(dbfile, podcasttitle=podcasttitle, episodetitle=episodetitle)

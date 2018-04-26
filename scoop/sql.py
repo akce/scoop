@@ -136,11 +136,8 @@ def getepisodes(dbfile, podcasttitle=None, episodetitle=None):
             episodes.append(Episode(**row))
     return episodes
 
-def dlepisodes(dbfile):
-    # This is the most involved query in scoop..
-    # We need to get the list of episodeid's that match podcasttitle
-    # AND/OR episodetitle (if given) AND that do not have an entry in
-    # the dl table with a WAITING (w) state.
+def getnewepisodes(dbfile):
+    """ Return all episodes that have no download orders. """
     queryelems = ['SELECT e.episodeid, p.title as podtitle, e.pubdate, e.title FROM episode as e JOIN podcast as p USING(podcastid) LEFT JOIN dl ON e.episodeid = dl.episodeid']
     order = 'ORDER BY p.title ASC, e.pubdate DESC'
     # This subquery ensures that we don't include any entries that have already been actioned.
@@ -158,7 +155,7 @@ def dlepisodes(dbfile):
         curs = conn.execute(query, value)
         for row in curs.fetchall():
             episodes.append(Episode(**row))
-    return adddownloads(episodes, dbfile, limit=False)
+    return episodes
 
 def getdls(dbfile, podcasttitle=None, episodetitle=None, statelist=None):
     queryelems = ['SELECT p.title as podtitle, e.title as eptitle, e.mediaurl, d.* FROM episode as e JOIN podcast as p USING(podcastid) JOIN dl as d USING(episodeid)']
