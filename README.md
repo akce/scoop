@@ -93,3 +93,17 @@ Then download new episodes:
 $ scoop dl get
 ```
 
+## Generating playlists
+
+Scoop allows for generating m3u playlists based on any combination of podcast title, episode title, or download age.
+
+### Create a playlist of todays downloads
+
+```
+$ scoop listgen --newerthan 0 today.m3u
+```
+
+### Create a playlist of all downloads for a podcast
+```
+$ scoop listgen --podcast podcastname podcastname.m3u
+```

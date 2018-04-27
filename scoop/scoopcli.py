@@ -2,6 +2,7 @@ import argparse
 import os
 
 from . import nestedarg
+from . import playlist
 from . import scoop
 
 def numberrangestolist(numberranges):
@@ -69,6 +70,9 @@ def syncpodcasts(args):
 def syncdls(args):
     scoop.syncdls(dbfile=args.dbfile)
 
+def makeplaylist(args):
+    playlist.makeplaylist(dbfile=args.dbfile, outfile=args.outfile, podcasttitle=args.podcast, episodetitle=args.episode, newerthan=args.newerthan)
+
 def main():
     dbfile = os.path.expanduser('~/.scoop.db')
     parser = argparse.ArgumentParser()
@@ -129,5 +133,11 @@ def main():
             c.set_defaults(command=lsdl)
         with subcommand('sync', aliases=['s', 'get', 'g'], help='action waiting download orders') as c:
             c.set_defaults(command=syncdls)
+    with command('listgen', aliases=['l'], help='generate playlist from download items') as c:
+        c.add_argument('outfile', default=None, type=str, metavar='FILE', help='write playlist to FILE')
+        c.add_argument('--podcast', default=None, type=str, metavar='TITLE', help='podcast title filter string')
+        c.add_argument('--episode', default=None, type=str, metavar='TITLE', help='episode title filter string')
+        c.add_argument('--newerthan', default=None, type=int, metavar='DAYS', help='only episodes downloaded within DAYS')
+        c.set_defaults(command=makeplaylist)
     args = parser.parse_args()
     args.command(args)

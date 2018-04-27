@@ -157,7 +157,7 @@ def getnewepisodes(dbfile):
             episodes.append(Episode(**row))
     return episodes
 
-def getdls(dbfile, podcasttitle=None, episodetitle=None, episodeids=None, statelist=None):
+def getdls(dbfile, podcasttitle=None, episodetitle=None, episodeids=None, statelist=None, newerthan=None):
     queryelems = ['SELECT p.title as podtitle, e.title as eptitle, e.mediaurl, d.* FROM episode as e JOIN podcast as p USING(podcastid) JOIN dl as d USING(episodeid)']
     order = 'ORDER BY podtitle ASC, e.pubdate DESC'
     where = []
@@ -174,6 +174,9 @@ def getdls(dbfile, podcasttitle=None, episodetitle=None, episodeids=None, statel
     if statelist:
         where.append('d.status IN (?)')
         value.append(','.join(statelist))
+    if newerthan is not None:
+        where.append('d.actioned > ?')
+        value.append(newerthan)
     # Build the query.
     if where:
         queryelems.append('WHERE')
