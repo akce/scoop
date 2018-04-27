@@ -8,22 +8,27 @@ import urllib.request as ur
 from . import rssxml
 from . import sql
 
-# dl podcast file
-def downloadurl(url, dbfile):
+def openurl(url, dbfile):
+    """ Return a url file pointer object. """
     agent = sql.getconfig('useragent', dbfile)['value']
     req = ur.Request(url, headers={'User-Agent': agent})
-    with ur.urlopen(req) as f:
-        # TODO write this to a file as it's being downloaded. Some of these media files are pretty large...
-        contentbytes = f.read()
-        # Some podcast will contain items whose URLs *all* have the same filename.
-        # These URLs will redirect to things that look like a filename we can use.
-        urlobj = ur.urlparse(f.url)
-        fullpath = ur.unquote(urlobj.path)
-        _, filename = os.path.split(fullpath)
-    return contentbytes, filename
+    return ur.urlopen(req)
+
+def urlfpfilename(urlfp):
+    """ Return filename from url file pointer object. """
+    # Some podcast will contain items whose URLs *all* have the same filename.
+    # These URLs will redirect to things that look like a filename we can use.
+    urlobj = ur.urlparse(urlfp.url)
+    fullpath = ur.unquote(urlobj.path)
+    _, filename = os.path.split(fullpath)
+    return filename
 
 def downloadrss(rssurl, dbfile, cache=False):
-    rssxmlbytes, _ = downloadurl(rssurl, dbfile)
+    urlfp = openurl(rssurl, dbfile)
+    try:
+        rssxmlbytes = urlfp.read()
+    finally:
+        urlfp.close()
     # Cache rssxmlbytes to file if config.saverss = True
     if cache:
         poddict = rssxml.podcastdict(rssxml.getxmltree(rssxmlbytes), rssurl)
@@ -66,12 +71,15 @@ def downloadepisode(dbfile, dl):
     # Ensure destdir exists.
     destdir = os.path.join(os.path.expanduser(sql.getconfig('downloaddir', dbfile)['value']), dl.podtitle)
     os.makedirs(destdir, exist_ok=True)
-    contentbytes, filename = downloadurl(dl.mediaurl, dbfile)
+    urlfp = openurl(dl.mediaurl, dbfile)
+    filename = urlfpfilename(urlfp)
     fullpath = os.path.join(destdir, filename)
-    # TODO test fullpath exists and size == episode.mediasize.
-    # TODO update dl entry with progress?
-    with open(fullpath, 'wb') as f:
-        f.write(contentbytes)
+    try:
+        with open(fullpath, 'wb') as f:
+            for chunkbytes in iter(lambda: urlfp.read(0x4000), b''):
+                f.write(chunkbytes)
+    finally:
+        urlfp.close()
     return filename
 
 def syncdls(dbfile):
