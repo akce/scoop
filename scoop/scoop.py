@@ -23,6 +23,9 @@ def urlfpfilename(urlfp):
     _, filename = os.path.split(fullpath)
     return filename
 
+def getdestdir(dbfile, podtitle):
+    return os.path.join(os.path.expanduser(sql.getconfig('downloaddir', dbfile)['value']), podtitle)
+
 def downloadrss(rssurl, dbfile, cache=False):
     urlfp = openurl(rssurl, dbfile)
     try:
@@ -56,8 +59,25 @@ def printpodcasts(dbfile, title=None):
 
 def editpodcast(dbfile, podtitle, title=None, rssurl=None):
     if any([title, rssurl]):
-        sql.editpodcast(dbfile, podtitle, title=title, rssurl=rssurl)
-        printpodcasts(dbfile, title)
+        podcasts = sql.getpodcasts(dbfile, podtitle)
+        # Make sure that podtitle matches only one podcast before changing anything.
+        np = len(podcasts)
+        if np == 0:
+            print('No podcasts found matching title "{}"'.format(podtitle))
+        elif np == 1:
+            sql.editpodcast(dbfile, podtitle, title=title, rssurl=rssurl)
+            print('{}:'.format(podtitle))
+            if title:
+                print('title: {} -> {}'.format(podcasts[0].title, title))
+                try:
+                    os.rename(getdestdir(dbfile, podcasts[0].title), getdestdir(dbfile, title))
+                except FileNotFoundError:
+                    pass
+            if rssurl:
+                print('rssurl: {} -> {}'.format(podcasts[0].rssurl, rssurl))
+        else:
+            # np > 1
+            print('More than one podcast matches title "{}", please narrow your search'.format(podtitle))
     else:
         print('Nothing to do! Supply either a new title or rssurl.')
 
@@ -69,7 +89,7 @@ def syncpodcasts(dbfile, title=None, limit=False):
 def downloadepisode(dbfile, dl):
     # Download episode from dl.mediaurl > config:downloaddir/dl.podtitle/dl.mediaurl:filename
     # Ensure destdir exists.
-    destdir = os.path.join(os.path.expanduser(sql.getconfig('downloaddir', dbfile)['value']), dl.podtitle)
+    destdir = getdestdir(dbfile, dl.podtitle)
     os.makedirs(destdir, exist_ok=True)
     urlfp = openurl(dl.mediaurl, dbfile)
     filename = urlfpfilename(urlfp)
