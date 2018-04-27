@@ -11,7 +11,9 @@ def playitems(dbfile, dls):
     for d in dls:
         label = '{}: {}'.format(d.podtitle, d.eptitle)
         fullpath = os.path.join(scoop.getdestdir(dbfile, d.podtitle), d.filename)
-        yield label, fullpath
+        # Only return if the file exists. Handles case where media has been deleted, moved, archived etc..
+        if os.path.isfile(fullpath):
+            yield label, fullpath
 
 def writem3u(dbfile, filename, dls):
     with open(filename, 'w+') as f:
