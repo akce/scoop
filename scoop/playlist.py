@@ -23,9 +23,9 @@ def writem3u(dbfile, filename, dls):
             print('#EXTINF:-1,{}'.format(label), file=f)
             print(os.path.relpath(fullpath, destdir), file=f)
             print('', file=f)
-            print(label)
 
 def makeplaylist(dbfile, outfile, podcasttitle=None, episodetitle=None, newerthan=None):
     dls = sql.getdls(dbfile, podcasttitle=podcasttitle, episodetitle=episodetitle, statelist=['d'], newerthan=newerthan)
     if dls:
         writem3u(dbfile, outfile, dls)
+        print('Wrote: {}'.format(outfile))

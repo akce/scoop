@@ -6,6 +6,7 @@ import os
 import sys
 import urllib.request as ur
 
+from . import playlist
 from . import rssxml
 from . import sql
 
@@ -108,7 +109,7 @@ def downloadepisode(dbfile, dl):
         urlfp.close()
     return filename
 
-def syncdls(dbfile):
+def syncdls(dbfile, updateindex=False):
     dls = sql.getdls(dbfile, statelist=['w'])
     for d in dls:
         try:
@@ -123,6 +124,12 @@ def syncdls(dbfile):
             state = 'd'
         sql.markdl(dbfile, d, state, filename)
         print('{} {:32} {}'.format(state, d.podtitle, d.eptitle))
+    if updateindex and dls:
+        # Update the index playlist for each podcast that had new episodes downloaded.
+        indexfile = sql.getconfig('indexfile', dbfile)['value']
+        for podtitle in sorted({p.podtitle for p in dls}):
+            outfile = os.path.join(getdestdir(dbfile, podtitle), indexfile)
+            playlist.makeplaylist(dbfile, outfile, podcasttitle=podtitle)
 
 def getmaxpodtitlelen(lst):
     return len(max(lst, key=lambda x: len(x.podtitle)).podtitle)

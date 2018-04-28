@@ -82,7 +82,7 @@ def syncpodcasts(args):
     scoop.syncpodcasts(dbfile=args.dbfile, title=args.podcasttitle, limit=args.limit)
 
 def syncdls(args):
-    scoop.syncdls(dbfile=args.dbfile)
+    scoop.syncdls(dbfile=args.dbfile, updateindex=args.updateindex)
 
 def makeplaylist(args):
     ts = daystotimestamp(args.newerthan)
@@ -148,6 +148,7 @@ def main():
             c.add_argument('--waiting', default=False, action='store_true', help='show waiting orders')
             c.set_defaults(command=lsdl)
         with subcommand('sync', aliases=['s', 'get', 'g'], help='action waiting download orders') as c:
+            c.add_argument('--updateindex', default=False, action='store_true', help='update playlist indexes')
             c.set_defaults(command=syncdls)
     with command('listgen', aliases=['l'], help='generate playlist from download items') as c:
         c.add_argument('outfile', default=None, type=str, metavar='FILE', help='write playlist to FILE')
