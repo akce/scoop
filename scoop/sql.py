@@ -110,7 +110,7 @@ def editpodcast(dbfile, podcasttitle, title=None, rssurl=None):
 
 def getepisodes(dbfile, idlist=None, podcasttitle=None, episodetitle=None):
     queryelems = ['SELECT p.title as podtitle, e.* FROM episode as e JOIN podcast as p on e.podcastid = p.podcastid']
-    order = 'ORDER BY podtitle ASC, e.pubdate DESC'
+    order = 'ORDER BY podtitle, e.pubdate'
     where = []
     value = []
     if idlist:
@@ -139,7 +139,7 @@ def getepisodes(dbfile, idlist=None, podcasttitle=None, episodetitle=None):
 def getnewepisodes(dbfile):
     """ Return all episodes that have no download orders. """
     queryelems = ['SELECT e.episodeid, p.title as podtitle, e.pubdate, e.title FROM episode as e JOIN podcast as p USING(podcastid) LEFT JOIN dl ON e.episodeid = dl.episodeid']
-    order = 'ORDER BY p.title ASC, e.pubdate DESC'
+    order = 'ORDER BY p.title, e.pubdate'
     # This subquery ensures that we don't include any entries that have already been actioned.
     where = ['(dl.episodeid NOT IN (SELECT x.episodeid FROM dl x WHERE x.status IS NOT NULL) OR dl.status IS NULL)']
     value = []
@@ -159,7 +159,7 @@ def getnewepisodes(dbfile):
 
 def getdls(dbfile, podcasttitle=None, episodetitle=None, episodeids=None, statelist=None, newerthan=None):
     queryelems = ['SELECT p.title as podtitle, e.title as eptitle, e.mediaurl, d.* FROM episode as e JOIN podcast as p USING(podcastid) JOIN dl as d USING(episodeid)']
-    order = 'ORDER BY podtitle ASC, e.pubdate DESC'
+    order = 'ORDER BY podtitle, e.pubdate'
     where = []
     value = []
     if podcasttitle:
