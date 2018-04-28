@@ -19,10 +19,11 @@ def writem3u(dbfile, filename, dls):
     with open(filename, 'w+') as f:
         print('#EXTM3U', file=f)
         print('', file=f)
+        destdir = os.path.dirname(filename)
         for label, fullpath in playitems(dbfile, dls):
             # We don't support media length/duration yet so hardcode -1 for now.
             print('#EXTINF:-1,{}'.format(label), file=f)
-            print(fullpath, file=f)
+            print(os.path.relpath(fullpath, destdir), file=f)
             print('', file=f)
             print(label)
 
