@@ -1,5 +1,7 @@
 import argparse
+import datetime
 import os
+import time
 
 from . import nestedarg
 from . import playlist
@@ -15,6 +17,17 @@ def numberrangestolist(numberranges):
         else:
             numlist.extend(list(range(int(a), int(b) + 1)))
     return list(sorted(numlist))
+
+def daystotimestamp(days):
+    if days is None:
+        ts = None
+    else:
+        # Create our newerthan timestamp.
+        # Using datetime and timedelta in this way will include the whole of days-ago.
+        daydiff = datetime.timedelta(days=days)
+        daysago = datetime.date.today() - daydiff
+        ts = int(time.mktime(daysago.timetuple()))
+    return ts
 
 def init(args):
     scoop.init(dbfile=args.dbfile)
@@ -53,7 +66,8 @@ def lsdl(args):
     else:
         # Show all by default.
         statelist = None
-    scoop.printdls(dbfile=args.dbfile, podcasttitle=args.podcasttitle, episodetitle=args.episodetitle, statelist=statelist)
+    ts = daystotimestamp(args.newerthan)
+    scoop.printdls(dbfile=args.dbfile, podcasttitle=args.podcasttitle, episodetitle=args.episodetitle, statelist=statelist, newerthan=ts)
 
 def printallconfig(args):
     scoop.printallconfig(dbfile=args.dbfile)
@@ -71,7 +85,8 @@ def syncdls(args):
     scoop.syncdls(dbfile=args.dbfile)
 
 def makeplaylist(args):
-    playlist.makeplaylist(dbfile=args.dbfile, outfile=args.outfile, podcasttitle=args.podcast, episodetitle=args.episode, newerthan=args.newerthan)
+    ts = daystotimestamp(args.newerthan)
+    playlist.makeplaylist(dbfile=args.dbfile, outfile=args.outfile, podcasttitle=args.podcast, episodetitle=args.episode, newerthan=ts)
 
 def main():
     dbfile = os.path.expanduser('~/.scoop.db')
@@ -126,6 +141,7 @@ def main():
         with subcommand('ls', aliases=['l'], help='list download orders') as c:
             c.add_argument('--podcasttitle', default=None, type=str, help='podcast title search string')
             c.add_argument('--episodetitle', default=None, type=str, help='episode title search string')
+            c.add_argument('--newerthan', default=None, type=int, metavar='DAYS', help='only episodes downloaded within DAYS')
             c.add_argument('--downloaded', default=False, action='store_true', help='show downloaded orders')
             c.add_argument('--errored', default=False, action='store_true', help='show errored orders')
             c.add_argument('--skipped', default=False, action='store_true', help='show skipped orders')

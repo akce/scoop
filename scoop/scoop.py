@@ -157,8 +157,8 @@ def dloldepisodes(dbfile, idlist=None, podcasttitle=None, episodetitle=None):
     waitingdlids = frozenset(d.episodeid for d in sql.getdls(dbfile, episodeids=eids, statelist=['w']))
     insertdls(dbfile, [e for e in episodes if e.episodeid not in waitingdlids])
 
-def printdls(dbfile, podcasttitle=None, episodetitle=None, statelist=None):
-    dls = sql.getdls(dbfile, podcasttitle=podcasttitle, episodetitle=episodetitle, statelist=statelist)
+def printdls(dbfile, podcasttitle=None, episodetitle=None, statelist=None, newerthan=None):
+    dls = sql.getdls(dbfile, podcasttitle=podcasttitle, episodetitle=episodetitle, statelist=statelist, newerthan=newerthan)
     print('\n'.join(makedlsprintlines(dls)))
 
 def init(dbfile):

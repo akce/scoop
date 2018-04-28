@@ -1,8 +1,6 @@
 """ Playlist writing module. """
 
-import datetime
 import os
-import time
 
 from . import scoop
 from . import sql
@@ -28,14 +26,6 @@ def writem3u(dbfile, filename, dls):
             print(label)
 
 def makeplaylist(dbfile, outfile, podcasttitle=None, episodetitle=None, newerthan=None):
-    if newerthan is None:
-        ts = None
-    else:
-        # Create our newerthan timestamp.
-        # Using datetime and timedelta in this way will include the whole of days-ago.
-        daydiff = datetime.timedelta(days=newerthan)
-        daysago = datetime.date.today() - daydiff
-        ts = int(time.mktime(daysago.timetuple()))
-    dls = sql.getdls(dbfile, podcasttitle=podcasttitle, episodetitle=episodetitle, statelist=['d'], newerthan=ts)
+    dls = sql.getdls(dbfile, podcasttitle=podcasttitle, episodetitle=episodetitle, statelist=['d'], newerthan=newerthan)
     if dls:
         writem3u(dbfile, outfile, dls)
