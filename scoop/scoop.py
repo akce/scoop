@@ -1,5 +1,6 @@
 """ Podcast scoop, main module. """
 
+import collections
 import datetime
 import os
 import sys
@@ -51,6 +52,11 @@ def addpodcasturl(rssurl, dbfile, limit=False):
     episodes = sql.addepisodes(podcast, rssxml.episodedicts(root), dbfile)
     # Create dl orders for episodes.
     downloads = sql.adddownloads(episodes, dbfile, limit)
+    # Print addition summary.
+    statii = collections.Counter()
+    for dl in downloads:
+        statii[dl.status] += 1
+    print('{}: {} new episodes ({} waiting {} skipped)'.format(podcast.title, len(episodes), statii['w'], statii['s']))
 
 def printpodcasts(dbfile, title=None):
     podcasts = sql.getpodcasts(dbfile, title)
@@ -116,19 +122,28 @@ def syncdls(dbfile):
             # Download success.
             state = 'd'
         sql.markdl(dbfile, d, state, filename)
-        print('{:<5} {} {:32} {}'.format(d.dlid, state, d.podtitle, d.eptitle))
+        print('{} {:32} {}'.format(state, d.podtitle, d.eptitle))
+
+def getmaxpodtitlelen(lst):
+    return len(max(lst, key=lambda x: len(x.podtitle)).podtitle)
 
 def printepisodes(dbfile, podcasttitle=None, episodetitle=None):
     episodes = sql.getepisodes(dbfile, podcasttitle=podcasttitle, episodetitle=episodetitle)
+    maxtitle = getmaxpodtitlelen(episodes)
+    fmt = '{:<5} {:' + str(maxtitle) + '} {} {}'
     for e in episodes:
-        print('{:<5} {:32} {} {}'.format(e.episodeid, e.podtitle, datetime.date.fromtimestamp(e.pubdate), e.title))
+        print(fmt.format(e.episodeid, e.podtitle, datetime.date.fromtimestamp(e.pubdate), e.title))
+
+def makedlsprintlines(dls):
+    maxtitle = getmaxpodtitlelen(dls)
+    fmt = '{} {:' + str(maxtitle) + '} {}'
+    return (fmt.format(d.status, d.podtitle, d.eptitle) for d in dls)
 
 def insertdls(dbfile, episodes):
     """ Insert new dl orders for each episode in episodes. """
     if episodes:
         dlorders = sql.adddownloads(episodes, dbfile, limit=False)
-        for d in dlorders:
-            print('{:<5} {} {:16} {}'.format(d.episodeid, d.status, d.podtitle, d.eptitle))
+        print('\n'.join(makedlsprintlines(dlorders)))
 
 def dlnewepisodes(dbfile):
     """ Adds download orders for new episodes. """
@@ -144,9 +159,7 @@ def dloldepisodes(dbfile, idlist=None, podcasttitle=None, episodetitle=None):
 
 def printdls(dbfile, podcasttitle=None, episodetitle=None, statelist=None):
     dls = sql.getdls(dbfile, podcasttitle=podcasttitle, episodetitle=episodetitle, statelist=statelist)
-    for d in dls:
-        filename = '' if d.filename is None else d.filename
-        print('{:<5} {} {:16} {:16} {}'.format(d.dlid, d.status, d.podtitle, filename, d.eptitle))
+    print('\n'.join(makedlsprintlines(dls)))
 
 def init(dbfile):
     sql.init(dbfile)
