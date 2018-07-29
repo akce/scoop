@@ -1,3 +1,7 @@
+"""
+RSS/XML parser module.
+Copyright (c) 2018 Acke, see LICENSE file for allowable usage.
+"""
 # Python standard modules.
 import email.utils as eu
 import xml.etree.ElementTree as et

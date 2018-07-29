@@ -1,4 +1,5 @@
 -- Podcasts state db.
+-- Copyright (c) 2018 Acke, see LICENSE file for allowable usage.
 
 -- Podcast channel.
 CREATE TABLE podcast (

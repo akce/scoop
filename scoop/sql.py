@@ -1,3 +1,7 @@
+"""
+Scoop SQL commands.
+Copyright (c) 2018 Acke, see LICENSE file for allowable usage.
+"""
 import collections
 import os
 import sqlite3

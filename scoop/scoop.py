@@ -1,4 +1,7 @@
-""" Podcast scoop, main module. """
+"""
+Podcast scoop, main module.
+Copyright (c) 2018 Acke, see LICENSE file for allowable usage.
+"""
 
 import collections
 import datetime

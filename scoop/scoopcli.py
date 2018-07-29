@@ -1,3 +1,7 @@
+"""
+Scoop command line processing module.
+Copyright (c) 2018 Acke, see LICENSE file for allowable usage.
+"""
 import argparse
 import datetime
 import os

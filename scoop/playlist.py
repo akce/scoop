@@ -1,4 +1,7 @@
-""" Playlist writing module. """
+"""
+Playlist writing module.
+Copyright (c) 2018 Acke, see LICENSE file for allowable usage.
+"""
 
 import os
 
