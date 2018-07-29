@@ -39,13 +39,7 @@ And for subcommands. eg, for *podcast*:
 $ scoop podcast --help
 ```
 
-Initialise the scoop database. Scoop uses one sqlite db to track config and rss feeds.
-
-```
-$ scoop init
-```
-
-The default database location is *~/.scoop.db*.
+The default database location is *~/.scoop.db*. It will automatically be created.
 
 Review and adjust configuration settings. To print all settings:
 ```

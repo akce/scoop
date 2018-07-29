@@ -13,9 +13,9 @@ from . import playlist
 from . import rssxml
 from . import sql
 
-def openurl(url, dbfile):
+def openurl(db, url):
     """ Return a url file pointer object. """
-    agent = sql.getconfig('useragent', dbfile)['value']
+    agent = sql.getconfig(db, 'useragent')['value']
     req = ur.Request(url, headers={'User-Agent': agent})
     return ur.urlopen(req)
 
@@ -28,11 +28,11 @@ def urlfpfilename(urlfp):
     _, filename = os.path.split(fullpath)
     return filename
 
-def getdestdir(dbfile, podtitle):
-    return os.path.join(os.path.expanduser(sql.getconfig('downloaddir', dbfile)['value']), podtitle)
+def getdestdir(db, podtitle):
+    return os.path.join(os.path.expanduser(sql.getconfig(db, 'downloaddir')['value']), podtitle)
 
-def downloadrss(rssurl, dbfile, cache=False):
-    urlfp = openurl(rssurl, dbfile)
+def downloadrss(db, rssurl, cache=False):
+    urlfp = openurl(db, rssurl)
     try:
         rssxmlbytes = urlfp.read()
     finally:
@@ -40,47 +40,47 @@ def downloadrss(rssurl, dbfile, cache=False):
     # Cache rssxmlbytes to file if config.saverss = True
     if cache:
         poddict = rssxml.podcastdict(rssxml.getxmltree(rssxmlbytes), rssurl)
-        destdir = os.path.expanduser(sql.getconfig('downloaddir', dbfile)['value'])
+        destdir = os.path.expanduser(sql.getconfig(db, 'downloaddir')['value'])
         os.makedirs(destdir, exist_ok=True)
         rssfile = os.path.join(destdir, '{}.rss'.format(poddict['title']))
         with open(rssfile, 'w') as f:
             f.write(str(rssxmlbytes, 'utf-8'))
     return rssxml.getxmltree(rssxmlbytes)
 
-def addpodcasturl(rssurl, dbfile, limit=False):
+def addpodcasturl(db, rssurl, limit=False):
     """ Adds a new podcast from network URL to track.
     Also add all the podcast episodes, as well as download items for 'limit' number of the newest episodes. """
-    root = downloadrss(rssurl, dbfile, cache=sql.getconfig('saverss', dbfile)['value'])
-    podcast = sql.addpodcast(rssxml.podcastdict(root, rssurl), dbfile)
+    root = downloadrss(db, rssurl, cache=sql.getconfig(db, 'saverss')['value'])
+    podcast = sql.addpodcast(db, rssxml.podcastdict(root, rssurl))
     # Insert podcast episodes.
-    episodes = sql.addepisodes(podcast, rssxml.episodedicts(root), dbfile)
+    episodes = sql.addepisodes(db, podcast, rssxml.episodedicts(root))
     # Create dl orders for episodes.
-    downloads = sql.adddownloads(episodes, dbfile, limit)
+    downloads = sql.adddownloads(db, episodes, limit)
     # Print addition summary.
     statii = collections.Counter()
     for dl in downloads:
         statii[dl.status] += 1
     print('{}: {} new episodes ({} waiting {} skipped)'.format(podcast.title, len(episodes), statii['w'], statii['s']))
 
-def printpodcasts(dbfile, title=None):
-    podcasts = sql.getpodcasts(dbfile, title)
+def printpodcasts(db, title=None):
+    podcasts = sql.getpodcasts(db, title)
     for p in podcasts:
         print(p.title)
 
-def editpodcast(dbfile, podtitle, title=None, rssurl=None):
+def editpodcast(db, podtitle, title=None, rssurl=None):
     if any([title, rssurl]):
-        podcasts = sql.getpodcasts(dbfile, podtitle)
+        podcasts = sql.getpodcasts(db, podtitle)
         # Make sure that podtitle matches only one podcast before changing anything.
         np = len(podcasts)
         if np == 0:
             print('No podcasts found matching title "{}"'.format(podtitle))
         elif np == 1:
-            sql.editpodcast(dbfile, podtitle, title=title, rssurl=rssurl)
+            sql.editpodcast(db, podtitle, title=title, rssurl=rssurl)
             print('{}:'.format(podtitle))
             if title:
                 print('title: {} -> {}'.format(podcasts[0].title, title))
                 try:
-                    os.rename(getdestdir(dbfile, podcasts[0].title), getdestdir(dbfile, title))
+                    os.rename(getdestdir(db, podcasts[0].title), getdestdir(db, title))
                 except FileNotFoundError:
                     pass
             if rssurl:
@@ -91,17 +91,17 @@ def editpodcast(dbfile, podtitle, title=None, rssurl=None):
     else:
         print('Nothing to do! Supply either a new title or rssurl.')
 
-def syncpodcasts(dbfile, title=None, limit=False):
-    podcasts = sql.getpodcasts(dbfile, title)
+def syncpodcasts(db, title=None, limit=False):
+    podcasts = sql.getpodcasts(db, title)
     for p in podcasts:
-        addpodcasturl(p.rssurl, dbfile, limit=limit)
+        addpodcasturl(db, p.rssurl, limit=limit)
 
-def downloadepisode(dbfile, dl):
+def downloadepisode(db, dl):
     # Download episode from dl.mediaurl > config:downloaddir/dl.podtitle/dl.mediaurl:filename
     # Ensure destdir exists.
-    destdir = getdestdir(dbfile, dl.podtitle)
+    destdir = getdestdir(db, dl.podtitle)
     os.makedirs(destdir, exist_ok=True)
-    urlfp = openurl(dl.mediaurl, dbfile)
+    urlfp = openurl(db, dl.mediaurl)
     filename = urlfpfilename(urlfp)
     fullpath = os.path.join(destdir, filename)
     try:
@@ -112,11 +112,11 @@ def downloadepisode(dbfile, dl):
         urlfp.close()
     return filename
 
-def syncdls(dbfile, updateindex=False):
-    dls = sql.getdls(dbfile, statelist=['w'])
+def syncdls(db, updateindex=False):
+    dls = sql.getdls(db, statelist=['w'])
     for d in dls:
         try:
-            filename = downloadepisode(dbfile, d)
+            filename = downloadepisode(db, d)
         except Exception as e:
             # Mark download failed.
             state = 'e'
@@ -125,20 +125,20 @@ def syncdls(dbfile, updateindex=False):
         else:
             # Download success.
             state = 'd'
-        sql.markdl(dbfile, d, state, filename)
+        sql.markdl(db, d, state, filename)
         print('{} {:32} {}'.format(state, d.podtitle, d.eptitle))
     if updateindex and dls:
         # Update the index playlist for each podcast that had new episodes downloaded.
-        indexfile = sql.getconfig('indexfile', dbfile)['value']
+        indexfile = sql.getconfig(db, 'indexfile')['value']
         for podtitle in sorted({p.podtitle for p in dls}):
-            outfile = os.path.join(getdestdir(dbfile, podtitle), indexfile)
-            playlist.makeplaylist(dbfile, outfile, podcasttitle=podtitle)
+            outfile = os.path.join(getdestdir(db, podtitle), indexfile)
+            playlist.makeplaylist(db, outfile, podcasttitle=podtitle)
 
 def getmaxpodtitlelen(lst):
     return len(max(lst, key=lambda x: len(x.podtitle)).podtitle)
 
-def printepisodes(dbfile, podcasttitle=None, episodetitle=None):
-    episodes = sql.getepisodes(dbfile, podcasttitle=podcasttitle, episodetitle=episodetitle)
+def printepisodes(db, podcasttitle=None, episodetitle=None):
+    episodes = sql.getepisodes(db, podcasttitle=podcasttitle, episodetitle=episodetitle)
     maxtitle = getmaxpodtitlelen(episodes)
     fmt = '{:<5} {:' + str(maxtitle) + '} {} {}'
     for e in episodes:
@@ -149,38 +149,35 @@ def makedlsprintlines(dls):
     fmt = '{} {:' + str(maxtitle) + '} {}'
     return (fmt.format(d.status, d.podtitle, d.eptitle) for d in dls)
 
-def insertdls(dbfile, episodes):
+def insertdls(db, episodes):
     """ Insert new dl orders for each episode in episodes. """
     if episodes:
-        dlorders = sql.adddownloads(episodes, dbfile, limit=False)
+        dlorders = sql.adddownloads(db, episodes, limit=False)
         print('\n'.join(makedlsprintlines(dlorders)))
 
-def dlnewepisodes(dbfile):
+def dlnewepisodes(db):
     """ Adds download orders for new episodes. """
-    insertdls(dbfile, sql.getnewepisodes(dbfile))
+    insertdls(db, sql.getnewepisodes(db))
 
-def dloldepisodes(dbfile, idlist=None, podcasttitle=None, episodetitle=None):
+def dloldepisodes(db, idlist=None, podcasttitle=None, episodetitle=None):
     """ Create dl orders for old/existing episodes. """
-    episodes = sql.getepisodes(dbfile, idlist=idlist, podcasttitle=podcasttitle, episodetitle=episodetitle)
+    episodes = sql.getepisodes(db, idlist=idlist, podcasttitle=podcasttitle, episodetitle=episodetitle)
     # Remove episodes that already have outstanding 'w' dl orders.
     eids = [e.episodeid for e in episodes]
-    waitingdlids = frozenset(d.episodeid for d in sql.getdls(dbfile, episodeids=eids, statelist=['w']))
-    insertdls(dbfile, [e for e in episodes if e.episodeid not in waitingdlids])
+    waitingdlids = frozenset(d.episodeid for d in sql.getdls(db, episodeids=eids, statelist=['w']))
+    insertdls(db, [e for e in episodes if e.episodeid not in waitingdlids])
 
-def printdls(dbfile, podcasttitle=None, episodetitle=None, statelist=None, newerthan=None):
-    dls = sql.getdls(dbfile, podcasttitle=podcasttitle, episodetitle=episodetitle, statelist=statelist, newerthan=newerthan)
+def printdls(db, podcasttitle=None, episodetitle=None, statelist=None, newerthan=None):
+    dls = sql.getdls(db, podcasttitle=podcasttitle, episodetitle=episodetitle, statelist=statelist, newerthan=newerthan)
     print('\n'.join(makedlsprintlines(dls)))
 
-def init(dbfile):
-    sql.init(dbfile)
-
-def printallconfig(dbfile):
-    for row in sql.getallconfig(dbfile):
+def printallconfig(db):
+    for row in sql.getallconfig(db):
         print('{:16} {:16} {}'.format(row['key'], row['value'], row['description']))
 
-def printconfig(key, dbfile):
-    row = sql.getconfig(key, dbfile)
+def printconfig(db, key):
+    row = sql.getconfig(db, key)
     print('{:16} {}'.format(key, row['value']))
 
-def setconfig(key, value, dbfile):
-    sql.setconfig(key, value, dbfile)
+def setconfig(db, key, value):
+    sql.setconfig(db, key, value)

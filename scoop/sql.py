@@ -4,7 +4,6 @@ Copyright (c) 2018 Acke, see LICENSE file for allowable usage.
 """
 import collections
 import os
-import sqlite3
 import time
 
 def makeinsertquery(query, columns):
@@ -40,36 +39,32 @@ class Episode(Data):
 class Download(Data):
     pass
 
-def getallconfig(dbfile):
-    with sqlite3.connect(dbfile) as conn:
-        conn.row_factory = sqlite3.Row
+def getallconfig(db):
+    with db as conn:
         curs = conn.execute('SELECT * FROM config')
         return curs.fetchall()
 
-def getconfig(field, dbfile):
-    with sqlite3.connect(dbfile) as conn:
-        conn.row_factory = sqlite3.Row
+def getconfig(db, field):
+    with db as conn:
         curs = conn.execute('SELECT value, description FROM config WHERE key = ?', (field,))
         return curs.fetchone()
 
-def setconfig(field, value, dbfile):
-    with sqlite3.connect(dbfile) as conn:
-        conn.row_factory = sqlite3.Row
+def setconfig(db, field, value):
+    with db as conn:
         curs = conn.execute('UPDATE config SET value = ? WHERE key = ?', (value, field,))
-        conn.commit()
+        db.commit()
 
-def addpodcast(poddict, dbfile):
+def addpodcast(db, poddict):
     """ Adds a new podcast to the database, returns the new podcast object. """
     global addpodsql
-    with sqlite3.connect(dbfile) as conn:
-        conn.row_factory = sqlite3.Row
+    with db as conn:
         poddict['podcastid'] = None
         cursor = conn.execute(addpodsql, poddict)
         if cursor.rowcount == 0:
             podcast = getpodcastbyrssurl(poddict['rssurl'], conn=conn)
         else:
             poddict['podcastid'] = cursor.lastrowid
-            conn.commit()
+            db.commit()
             podcast = Podcast(**poddict)
     return podcast
 
@@ -77,7 +72,7 @@ def getpodcastbyrssurl(rssurl, conn):
     curs = conn.execute('SELECT * FROM podcast WHERE rssurl = ?', (rssurl,))
     return Podcast(**curs.fetchone())
 
-def getpodcasts(dbfile, title=None):
+def getpodcasts(db, title=None):
     basequery = 'SELECT * FROM podcast'
     order = ' ORDER BY title'
     if title:
@@ -87,14 +82,13 @@ def getpodcasts(dbfile, title=None):
         query = basequery + order
         value = ()
     podcasts = []
-    with sqlite3.connect(dbfile) as conn:
-        conn.row_factory = sqlite3.Row
+    with db as conn:
         curs = conn.execute(query, value)
         for row in curs.fetchall():
             podcasts.append(Podcast(**row))
     return podcasts
 
-def editpodcast(dbfile, podcasttitle, title=None, rssurl=None):
+def editpodcast(db, podcasttitle, title=None, rssurl=None):
     basequery = ['UPDATE podcast SET']
     setvalues = []
     values = []
@@ -107,12 +101,11 @@ def editpodcast(dbfile, podcasttitle, title=None, rssurl=None):
     whereelems = ['WHERE title LIKE ?']
     values.append('%{}%'.format(podcasttitle))
     query = ' '.join(basequery + [', '.join(setvalues)] + whereelems)
-    with sqlite3.connect(dbfile) as conn:
-        conn.row_factory = sqlite3.Row
+    with db as conn:
         conn.execute(query, values)
-        conn.commit()
+        db.commit()
 
-def getepisodes(dbfile, idlist=None, podcasttitle=None, episodetitle=None):
+def getepisodes(db, idlist=None, podcasttitle=None, episodetitle=None):
     queryelems = ['SELECT p.title as podtitle, e.* FROM episode as e JOIN podcast as p on e.podcastid = p.podcastid']
     order = 'ORDER BY podtitle, e.pubdate'
     where = []
@@ -133,14 +126,13 @@ def getepisodes(dbfile, idlist=None, podcasttitle=None, episodetitle=None):
     queryelems.append(order)
     query = ' '.join(queryelems)
     episodes = []
-    with sqlite3.connect(dbfile) as conn:
-        conn.row_factory = sqlite3.Row
+    with db as conn:
         curs = conn.execute(query, value)
         for row in curs.fetchall():
             episodes.append(Episode(**row))
     return episodes
 
-def getnewepisodes(dbfile):
+def getnewepisodes(db):
     """ Return all episodes that have no download orders. """
     queryelems = ['SELECT e.episodeid, p.title as podtitle, e.pubdate, e.title FROM episode as e JOIN podcast as p USING(podcastid) LEFT JOIN dl ON e.episodeid = dl.episodeid']
     order = 'ORDER BY p.title, e.pubdate'
@@ -154,14 +146,13 @@ def getnewepisodes(dbfile):
     queryelems.append(order)
     query = ' '.join(queryelems)
     episodes = []
-    with sqlite3.connect(dbfile) as conn:
-        conn.row_factory = sqlite3.Row
+    with db as conn:
         curs = conn.execute(query, value)
         for row in curs.fetchall():
             episodes.append(Episode(**row))
     return episodes
 
-def getdls(dbfile, podcasttitle=None, episodetitle=None, episodeids=None, statelist=None, newerthan=None):
+def getdls(db, podcasttitle=None, episodetitle=None, episodeids=None, statelist=None, newerthan=None):
     queryelems = ['SELECT p.title as podtitle, e.title as eptitle, e.mediaurl, d.* FROM episode as e JOIN podcast as p USING(podcastid) JOIN dl as d USING(episodeid)']
     order = 'ORDER BY podtitle, e.pubdate'
     where = []
@@ -188,24 +179,21 @@ def getdls(dbfile, podcasttitle=None, episodetitle=None, episodeids=None, statel
     queryelems.append(order)
     query = ' '.join(queryelems)
     dls = []
-    with sqlite3.connect(dbfile) as conn:
-        conn.row_factory = sqlite3.Row
+    with db as conn:
         curs = conn.execute(query, value)
         for row in curs.fetchall():
             dls.append(Download(**row))
     return dls
 
-def markdl(dbfile, dl, state, filename):
-    with sqlite3.connect(dbfile) as conn:
-        conn.row_factory = sqlite3.Row
+def markdl(db, dl, state, filename):
+    with db as conn:
         conn.execute('UPDATE dl SET status = ?, actioned = ?, filename = ? WHERE dlid = ?', (state, int(time.time()), filename, dl.dlid))
-        conn.commit()
+        db.commit()
 
-def addepisodes(podcast, episodedicts, dbfile):
+def addepisodes(db, podcast, episodedicts):
     global addepsql
     newepisodes = []
-    with sqlite3.connect(dbfile) as conn:
-        conn.row_factory = sqlite3.Row
+    with db as conn:
         for ep in episodedicts:
             ep['episodeid'] = None
             ep['podcastid'] = podcast.podcastid
@@ -217,14 +205,13 @@ def addepisodes(podcast, episodedicts, dbfile):
             ep['podtitle'] = podcast.title
             newepisodes.append(Episode(**ep))
         if newepisodes:
-            conn.commit()
+            db.commit()
     return newepisodes
 
-def adddownloads(episodes, dbfile, limit):
+def adddownloads(db, episodes, limit):
     global adddlsql
     newdownloads = []
-    with sqlite3.connect(dbfile) as conn:
-        conn.row_factory = sqlite3.Row
+    with db as conn:
         counter = collections.Counter()
         # SKIPPED is only for the initial import so podcasts with long history aren't fully downloaded.
         skippods = set()
@@ -259,22 +246,5 @@ def adddownloads(episodes, dbfile, limit):
             dl['eptitle'] = ep.title
             newdownloads.append(Download(**dl))
         if newdownloads:
-            conn.commit()
+            db.commit()
     return newdownloads
-
-def init(dbfile):
-    """ Create and initialise a db file from our schema """
-    if os.path.exists(dbfile):
-        raise Exception('Cannot init, database already exists {}'.format(dbfile))
-    # Create the db: load in the schema and populate with default config.
-    basedir = os.path.dirname(dbfile)
-    # basedir will return '' if dbfile is in the current directory.
-    if basedir != '':
-        os.makedirs(basedir, exist_ok=True)
-    # Read in our schema from our source directory.
-    schemafile = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'schema.sql')
-    schema = open(schemafile).read()
-    with sqlite3.connect(dbfile) as conn:
-        conn.row_factory = sqlite3.Row
-        conn.executescript(schema)
-        conn.commit()

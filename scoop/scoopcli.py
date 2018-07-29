@@ -7,9 +7,16 @@ import datetime
 import os
 import time
 
+from . import db
 from . import nestedarg
 from . import playlist
 from . import scoop
+
+def usedb(func):
+    def mkdb(args):
+        dbobj = db.DB(args.dbfile)
+        return func(dbobj, args)
+    return mkdb
 
 def numberrangestolist(numberranges):
     numlist = []
@@ -33,33 +40,37 @@ def daystotimestamp(days):
         ts = int(time.mktime(daysago.timetuple()))
     return ts
 
-def init(args):
-    scoop.init(dbfile=args.dbfile)
+@usedb
+def addpodcast(dbobj, args):
+    scoop.addpodcasturl(db=dbobj, rssurl=args.rssurl, limit=args.limit)
 
-def addpodcast(args):
-    scoop.addpodcasturl(rssurl=args.rssurl, dbfile=args.dbfile, limit=args.limit)
+@usedb
+def lspodcasts(dbobj, args):
+    scoop.printpodcasts(db=dbobj, title=args.title)
 
-def lspodcasts(args):
-    scoop.printpodcasts(dbfile=args.dbfile, title=args.title)
+@usedb
+def editpodcast(dbobj, args):
+    scoop.editpodcast(db=dbobj, podtitle=args.podtitle, title=args.title, rssurl=args.rssurl)
 
-def editpodcast(args):
-    scoop.editpodcast(dbfile=args.dbfile, podtitle=args.podtitle, title=args.title, rssurl=args.rssurl)
+@usedb
+def lsepisodes(dbobj, args):
+    scoop.printepisodes(db=dbobj, podcasttitle=args.podcasttitle, episodetitle=args.episodetitle)
 
-def lsepisodes(args):
-    scoop.printepisodes(dbfile=args.dbfile, podcasttitle=args.podcasttitle, episodetitle=args.episodetitle)
-
-def dloldepisodes(args):
+@usedb
+def dloldepisodes(dbobj, args):
     # Explode idranges to a list of numbers.
     if args.ids is None:
         idlist = []
     else:
         idlist = numberrangestolist(args.ids)
-    scoop.dloldepisodes(dbfile=args.dbfile, idlist=idlist, podcasttitle=args.podcasttitle, episodetitle=args.episodetitle)
+    scoop.dloldepisodes(db=dbobj, idlist=idlist, podcasttitle=args.podcasttitle, episodetitle=args.episodetitle)
 
-def dlnewepisodes(args):
-    scoop.dlnewepisodes(dbfile=args.dbfile)
+@usedb
+def dlnewepisodes(dbobj, args):
+    scoop.dlnewepisodes(db=dbobj)
 
-def lsdl(args):
+@usedb
+def lsdl(dbobj, args):
     # Convert args to status list.
     if any([args.downloaded, args.errored, args.skipped, args.waiting]):
         # Find the ones selected and put in our list.
@@ -71,26 +82,32 @@ def lsdl(args):
         # Show all by default.
         statelist = None
     ts = daystotimestamp(args.newerthan)
-    scoop.printdls(dbfile=args.dbfile, podcasttitle=args.podcasttitle, episodetitle=args.episodetitle, statelist=statelist, newerthan=ts)
+    scoop.printdls(db=dbobj, podcasttitle=args.podcasttitle, episodetitle=args.episodetitle, statelist=statelist, newerthan=ts)
 
-def printallconfig(args):
-    scoop.printallconfig(dbfile=args.dbfile)
+@usedb
+def printallconfig(dbobj, args):
+    scoop.printallconfig(db=dbobj)
 
-def printconfig(args):
-    scoop.printconfig(args.key, dbfile=args.dbfile)
+@usedb
+def printconfig(dbobj, args):
+    scoop.printconfig(db=dbobj, key=args.key)
 
-def setconfig(args):
-    scoop.setconfig(args.key, args.value, dbfile=args.dbfile)
+@usedb
+def setconfig(dbobj, args):
+    scoop.setconfig(db=dbobj, key=args.key, value=args.value)
 
-def syncpodcasts(args):
-    scoop.syncpodcasts(dbfile=args.dbfile, title=args.podcasttitle, limit=args.limit)
+@usedb
+def syncpodcasts(dbobj, args):
+    scoop.syncpodcasts(db=dbobj, title=args.podcasttitle, limit=args.limit)
 
-def syncdls(args):
-    scoop.syncdls(dbfile=args.dbfile, updateindex=args.updateindex)
+@usedb
+def syncdls(dbobj, args):
+    scoop.syncdls(db=dbobj, updateindex=args.updateindex)
 
-def makeplaylist(args):
+@usedb
+def makeplaylist(dbobj, args):
     ts = daystotimestamp(args.newerthan)
-    playlist.makeplaylist(dbfile=args.dbfile, outfile=args.outfile, podcasttitle=args.podcast, episodetitle=args.episode, newerthan=ts)
+    playlist.makeplaylist(db=dbobj, outfile=args.outfile, podcasttitle=args.podcast, episodetitle=args.episode, newerthan=ts)
 
 def main():
     dbfile = os.path.expanduser('~/.scoop.db')
@@ -107,8 +124,6 @@ def main():
             s.add_argument('value', help='new value')
             s.set_defaults(command=setconfig)
         c.set_defaults(command=printallconfig)
-    with command('init', aliases=['i'], help='initialise scoop db') as c:
-        c.set_defaults(command=init)
     with command('podcast', aliases=['p'], help='podcast actions') as c:
         subcommand = nestedarg.NestedSubparser(c.add_subparsers())
         with subcommand('add', aliases=['new', 'a', 'n'], help='add a new podcast') as c:
