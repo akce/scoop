@@ -12,6 +12,7 @@ import urllib.request as ur
 from . import playlist
 from . import rssxml
 from . import sql
+from . import util
 
 def openurl(db, url):
     """ Return a url file pointer object. """
@@ -27,9 +28,6 @@ def urlfpfilename(urlfp):
     fullpath = ur.unquote(urlobj.path)
     _, filename = os.path.split(fullpath)
     return filename
-
-def getdestdir(db, podtitle):
-    return os.path.join(os.path.expanduser(sql.getconfig(db, 'downloaddir')['value']), podtitle)
 
 def downloadrss(db, rssurl, cache=False):
     urlfp = openurl(db, rssurl)
@@ -80,7 +78,7 @@ def editpodcast(db, podtitle, title=None, rssurl=None):
             if title:
                 print('title: {} -> {}'.format(podcasts[0].title, title))
                 try:
-                    os.rename(getdestdir(db, podcasts[0].title), getdestdir(db, title))
+                    os.rename(util.getdestdir(db, podcasts[0].title), util.getdestdir(db, title))
                 except FileNotFoundError:
                     pass
             if rssurl:
@@ -99,7 +97,7 @@ def syncpodcasts(db, title=None, limit=False):
 def downloadepisode(db, dl):
     # Download episode from dl.mediaurl > config:downloaddir/dl.podtitle/dl.mediaurl:filename
     # Ensure destdir exists.
-    destdir = getdestdir(db, dl.podtitle)
+    destdir = util.getdestdir(db, dl.podtitle)
     os.makedirs(destdir, exist_ok=True)
     urlfp = openurl(db, dl.mediaurl)
     filename = urlfpfilename(urlfp)
@@ -131,7 +129,7 @@ def syncdls(db, updateindex=False):
         # Update the index playlist for each podcast that had new episodes downloaded.
         indexfile = sql.getconfig(db, 'indexfile')['value']
         for podtitle in sorted({p.podtitle for p in dls}):
-            outfile = os.path.join(getdestdir(db, podtitle), indexfile)
+            outfile = os.path.join(util.getdestdir(db, podtitle), indexfile)
             playlist.makeplaylist(db, outfile, podcasttitle=podtitle)
 
 def getmaxpodtitlelen(lst):

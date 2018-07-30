@@ -5,13 +5,13 @@ Copyright (c) 2018 Acke, see LICENSE file for allowable usage.
 
 import os
 
-from . import scoop
 from . import sql
+from . import util
 
 def playitems(db, dls):
     for d in dls:
         label = '{}: {}'.format(d.podtitle, d.eptitle)
-        fullpath = os.path.join(scoop.getdestdir(db, d.podtitle), d.filename)
+        fullpath = os.path.join(util.getdestdir(db, d.podtitle), d.filename)
         # Only return if the file exists. Handles case where media has been deleted, moved, archived etc..
         if os.path.isfile(fullpath):
             yield label, fullpath
