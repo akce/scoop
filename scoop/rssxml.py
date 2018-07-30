@@ -1,6 +1,11 @@
 """
 RSS/XML parser module.
 Copyright (c) 2018 Acke, see LICENSE file for allowable usage.
+
+RSS 2.0 Spec:
+https://cyber.harvard.edu/rss/rss.html
+ATOM Spec:
+http://tools.ietf.org/html/rfc4287
 """
 # Python standard modules.
 import email.utils as eu
