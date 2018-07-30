@@ -1,0 +1,19 @@
+#! /bin/sh
+#
+# Sample cron-able script for scoop.
+# Assumes scoop has been checked out to ~/opt/scoop (SCOOPHOME).
+
+SCOOPHOME=${HOME}/opt/scoop
+export PYTHONPATH=${SCOOPHOME}:${PYTHONPATH}
+PATH=${SCOOPHOME}/bin:${PATH}
+
+# Sync podcasts and find new episodes.
+scoop podcast sync
+
+# Download new episodes and update changed index files.
+scoop dl sync --updateindex
+
+# Generate some handy playlists.
+scoop listgen --newerthan 0 ${HOME}/scoop/today.m3u
+scoop listgen --newerthan 1 ${HOME}/scoop/twodays.m3u
+scoop listgen --newerthan 7 ${HOME}/scoop/week.m3u
