@@ -7,6 +7,7 @@ import collections
 import datetime
 import os
 import sys
+import urllib.parse as up
 import urllib.request as ur
 
 from . import playlist
@@ -26,6 +27,22 @@ def urlfpfilename(urlfp):
     # These URLs will redirect to things that look like a filename we can use.
     urlobj = ur.urlparse(urlfp.url)
     fullpath = ur.unquote(urlobj.path)
+    if urlobj.query:
+        # I have one podcast that includes a query string with the filename:
+        # [('sv', '2015-04-05'), ('sr', 'b'), ('si', 'private'), ('sig', 'Bdh....'), ('se', '2018-07-24T12:56:40Z'), ('rscd', 'attachment; filename="xx.mp3"')]")]
+        # As near as I can tell, it's some sort of Azure cloud thing...
+        # Try and extract the filename.
+        qdict = up.parse_qs(urlobj.query)
+        try:
+            rstr = qdict['rscd'][0]
+        except (IndexError, KeyError):
+            pass
+        else:
+            # rstr should be in format 'attachment; filename="xxx.mp3"'
+            try:
+                fullpath = rstr.split('"')[1]
+            except IndexError:
+                pass
     _, filename = os.path.split(fullpath)
     return filename
 
