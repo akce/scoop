@@ -24,6 +24,7 @@ def podcastdict(root, rssurl):
     """ Create a podcast dict from rss xml. """
     # rss.channel.title
     chan = root.find('channel')
+    # The 3 elements below are required for RSS channels so not checking for now.
     title = chan.find('title').text
     descr = chan.find('description').text
     homepage = chan.find('link').text
@@ -34,15 +35,36 @@ def episodedicts(root):
     # podcast iter / parse rss | atom | yahoo-media | itunes etc
     chan = root.find('channel')
     for x in chan.findall('item'):
-        guidnode = x.find('guid')
-        guid = guidnode.text
-        permalink = True if guidnode.attrib['isPermaLink'] == 'true' else False
-        pubdatestr = x.find('pubDate').text
-        pubdate = round(eu.parsedate_to_datetime(pubdatestr).timestamp())
+        # All elements of an 'item' are optional, but there must be at least one of 'title' or 'description'.
         # Remove trailing whitespace/newlines (rstrip) from title and description fields.
-        description = x.find('description').text.rstrip()
-        title = x.find('title').text.rstrip()
-        link = x.find('link').text
+        try:
+            title = x.find('title').text.rstrip()
+        except AttributeError:
+            title = None
+        try:
+            description = x.find('description').text.rstrip()
+        except AttributeError:
+            description = None
+        if not any([title, description]):
+            # Invalid, skip item.
+            continue
+        guidnode = x.find('guid')
+        try:
+            guid = guidnode.text
+            permalink = True if guidnode.attrib['isPermaLink'] == 'true' else False
+        except AttributeError:
+            guid = None
+            permalink = None
+        try:
+            pubdatestr = x.find('pubDate').text
+        except AttributeError:
+            pubdate = None
+        else:
+            pubdate = round(eu.parsedate_to_datetime(pubdatestr).timestamp())
+        try:
+            link = x.find('link').text
+        except AttributeError:
+            link = None
         medianode = x.find('enclosure')
         try:
             mediaurl = medianode.attrib['url']
