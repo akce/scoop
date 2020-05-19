@@ -74,8 +74,11 @@ def episodedicts(root):
             mediatype = None
             medialength = None
         else:
-            mediatype = medianode.attrib['type']
-            medialength = int(medianode.attrib['length'])
+            # RSS2.0 specifies that enclosure has 3 required attributes: url, type, and length.
+            # They're not always provided though. eg, length in "Bludging on the Blindside"!
+            # So make them optional.
+            mediatype = medianode.attrib.get('type', None)
+            medialength = int(medianode.attrib.get('length', -1))
         ep = dict(guid=guid, permalink=permalink, title=title, description=description, mediaurl=mediaurl, mediatype=mediatype, medialength=medialength, pubdate=pubdate, link=link)
         yield ep
 
