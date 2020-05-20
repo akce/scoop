@@ -82,15 +82,15 @@ def printpodcasts(db, title=None):
     for p in podcasts:
         print(p.title)
 
-def editpodcast(db, podtitle, title=None, rssurl=None):
-    if any([title, rssurl]):
+def editpodcast(db, podtitle, title=None, rssurl=None, stopped=None):
+    if any([title, rssurl]) or stopped is not None:
         podcasts = sql.getpodcasts(db, podtitle)
         # Make sure that podtitle matches only one podcast before changing anything.
         np = len(podcasts)
         if np == 0:
             print('No podcasts found matching title "{}"'.format(podtitle))
         elif np == 1:
-            sql.editpodcast(db, podtitle, title=title, rssurl=rssurl)
+            sql.editpodcast(db, podtitle, title=title, rssurl=rssurl, stopped=stopped)
             print('{}:'.format(podtitle))
             if title:
                 print('title: {} -> {}'.format(podcasts[0].title, title))
@@ -100,6 +100,8 @@ def editpodcast(db, podtitle, title=None, rssurl=None):
                     pass
             if rssurl:
                 print('rssurl: {} -> {}'.format(podcasts[0].rssurl, rssurl))
+            if stopped is not None:
+                print('stopped: {} -> {}'.format(podcasts[0].stopped, stopped))
         else:
             # np > 1
             print('More than one podcast matches title "{}", please narrow your search'.format(podtitle))
@@ -109,7 +111,8 @@ def editpodcast(db, podtitle, title=None, rssurl=None):
 def syncpodcasts(db, title=None, limit=False):
     podcasts = sql.getpodcasts(db, title)
     for p in podcasts:
-        addpodcasturl(db, p.rssurl, limit=limit)
+        if p.stopped is None:
+            addpodcasturl(db, p.rssurl, limit=limit)
 
 def downloadepisode(db, dl):
     # Download episode from dl.mediaurl > config:downloaddir/dl.podtitle/dl.mediaurl:filename

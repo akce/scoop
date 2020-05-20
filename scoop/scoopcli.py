@@ -50,7 +50,7 @@ def lspodcasts(dbobj, args):
 
 @usedb
 def editpodcast(dbobj, args):
-    scoop.editpodcast(db=dbobj, podtitle=args.podtitle, title=args.title, rssurl=args.rssurl)
+    scoop.editpodcast(db=dbobj, podtitle=args.podtitle, title=args.title, rssurl=args.rssurl, stopped=args.stopped)
 
 @usedb
 def lsepisodes(dbobj, args):
@@ -137,6 +137,8 @@ def main():
             c.add_argument('podtitle', help='podcast title or search string')
             c.add_argument('--title', type=str, help='set podcast title name')
             c.add_argument('--rssurl', type=str, help='set podcast rssurl')
+            c.add_argument('--start', dest='stopped', action='store_false', default=None)
+            c.add_argument('--stop', dest='stopped', action='store_true', default=None)
             c.set_defaults(command=editpodcast)
         with subcommand('sync', aliases=['get', 'g', 's'], help='find new episodes for podcasts') as c:
             c.add_argument('--podcasttitle', default=None, type=str, help='podcast title search string')

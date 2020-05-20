@@ -7,7 +7,8 @@ CREATE TABLE podcast (
 	title		TEXT	UNIQUE,
 	rssurl		TEXT	UNIQUE,
 	description	TEXT,
-	homepage	TEXT
+	homepage	TEXT,
+	stopped		INTEGER		-- date that podcast subscription ends.
 );
 
 -- Podcast episode. Favour regular rss, but also include media: and itunes: info if needed.
@@ -36,7 +37,7 @@ CREATE TABLE config (
 INSERT INTO config ('key', 'value', 'description') VALUES ('downloaddir', '~/scoop', 'Base podcast download directory');
 INSERT INTO config ('key', 'value', 'description') VALUES ('indexfile', '00-index.m3u', 'podcast index filename');
 INSERT INTO config ('key', 'value', 'description') VALUES ('saverss', '1', 'Set to 1 if the rss file should be saved to the download directory');
-INSERT INTO config ('key', 'value', 'description') VALUES ('schemaversion', '2', 'Scoop sqlite schema interface version number');
+INSERT INTO config ('key', 'value', 'description') VALUES ('schemaversion', '3', 'Scoop sqlite schema interface version number');
 INSERT INTO config ('key', 'value', 'description') VALUES ('useragent', 'Scoop/0.1', 'HTTP User Agent');
 
 -- Work queue for downloading episodes.

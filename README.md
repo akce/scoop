@@ -101,3 +101,13 @@ $ scoop listgen --newerthan 0 today.m3u
 ```
 $ scoop listgen --podcast podcastname podcastname.m3u
 ```
+## Updating old schema
+
+### From v2 to v3
+
+```
+$ sqlite3 .scoop.db
+sqlite> alter table podcast add column stopped INTEGER;
+sqlite> update config set value = '3' where key = 'schemaversion';
+sqlite> ^D
+```

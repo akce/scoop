@@ -9,7 +9,7 @@ import time
 def makeinsertquery(query, columns):
     return query.format(','.join(columns), ','.join(':{}'.format(x) for x in columns))
 
-podcols = ['podcastid', 'title', 'rssurl', 'description', 'homepage']
+podcols = ['podcastid', 'title', 'rssurl', 'description', 'homepage', 'stopped']
 addpodsql = makeinsertquery('''INSERT OR IGNORE INTO
 podcast ({})
 VALUES ({});''', podcols)
@@ -54,11 +54,12 @@ def setconfig(db, field, value):
         curs = conn.execute('UPDATE config SET value = ? WHERE key = ?', (value, field,))
         db.commit()
 
-def addpodcast(db, poddict):
+def addpodcast(db, poddict, stopped=None):
     """ Adds a new podcast to the database, returns the new podcast object. """
     global addpodsql
     with db as conn:
         poddict['podcastid'] = None
+        poddict['stopped'] = stopped
         cursor = conn.execute(addpodsql, poddict)
         if cursor.rowcount == 0:
             podcast = getpodcastbyrssurl(poddict['rssurl'], conn=conn)
@@ -88,7 +89,7 @@ def getpodcasts(db, title=None):
             podcasts.append(Podcast(**row))
     return podcasts
 
-def editpodcast(db, podcasttitle, title=None, rssurl=None):
+def editpodcast(db, podcasttitle, title=None, rssurl=None, stopped=None):
     basequery = ['UPDATE podcast SET']
     setvalues = []
     values = []
@@ -98,6 +99,13 @@ def editpodcast(db, podcasttitle, title=None, rssurl=None):
     if rssurl:
         setvalues.append('rssurl = ?')
         values.append(rssurl)
+    if stopped is not None:
+        setvalues.append('stopped = ?')
+        if stopped:
+            val = int(time.time())
+        else:
+            val = None
+        values.append(val)
     whereelems = ['WHERE title LIKE ?']
     values.append('%{}%'.format(podcasttitle))
     query = ' '.join(basequery + [', '.join(setvalues)] + whereelems)
