@@ -1,6 +1,6 @@
 """
 Playlist writing module.
-Copyright (c) 2018 Acke, see LICENSE file for allowable usage.
+Copyright (c) 2018-2020 Acke, see LICENSE file for allowable usage.
 """
 
 import os
@@ -9,8 +9,16 @@ from . import sql
 from . import util
 
 def playitems(db, dls):
+    # Omit podcast title if all episodes come from the same podcast.
+    if len({x.podtitle for x in dls if x.podtitle is not None}) > 1:
+        def makelabel(dl):
+            return '{}: {}'.format(d.podtitle, d.eptitle)
+    else:
+        def makelabel(dl):
+            return d.eptitle
+
     for d in dls:
-        label = '{}: {}'.format(d.podtitle, d.eptitle)
+        label = makelabel(d)
         fullpath = os.path.join(util.getdestdir(db, d.podtitle), d.filename)
         # Only return if the file exists. Handles case where media has been deleted, moved, archived etc..
         if os.path.isfile(fullpath):
